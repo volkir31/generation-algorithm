@@ -28,7 +28,8 @@ fun generateGraph(size: Int): GraphAlias {
 }
 
 fun main() {
-    val size = 60
+    val size = 50
+    val isImmune = true
     val targetGraph = generateGraph(size)
     val start = Instant.now().epochSecond
     val populationCount = 1000
@@ -42,7 +43,11 @@ fun main() {
         population = selection(population, eliteCount.toInt(), targetGraph)
         val children = mutableListOf<GraphAlias>()
         while (children.size < population.size) {
-            val child = mutate(crossover(population.random(), population.random()))
+            val child = if (!isImmune) {
+                mutate(population.random())
+            } else {
+                mutate(crossover(population.random(), population.random()))
+            }
             population.toMutableList().remove(population.minBy { person -> fitness(person, targetGraph) })
             children.add(child)
         }
@@ -50,7 +55,10 @@ fun main() {
 
         currentFitness = population.fold(0) { acc, pairs -> acc + fitness(pairs, targetGraph) }
         println(currentFitness)
-        generationAndFitness.add(Pair(countGenerations++, round((currentFitness.toDouble() / targetFitness) * 1000) / 10))
+        if (countGenerations % 5 == 0) {
+            generationAndFitness.add(Pair(countGenerations, round((currentFitness.toDouble() / targetFitness) * 1000) / 10))
+        }
+        countGenerations++
     }
     println()
     currentFitness = population.fold(0) { acc, pairs -> acc + fitness(pairs, targetGraph) }
@@ -58,7 +66,7 @@ fun main() {
     println(generationAndFitness)
     println(countGenerations)
 
-//    println(Instant.now().epochSecond - start)
+    println(Instant.now().epochSecond - start)
 
 //    displayGraph(targetGraph, "Target")
 //    displayGraph(population.maxBy { fitness(it, targetGraph) }, "Generated")
