@@ -28,7 +28,7 @@ fun generateGraph(size: Int): GraphAlias {
 }
 
 fun main() {
-    val size = 50
+    val size = 60
     val isImmune = true
     val targetGraph = generateGraph(size)
     val start = Instant.now().epochSecond
