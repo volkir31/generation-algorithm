@@ -14,9 +14,6 @@ dependencies {
     implementation("net.sf.jung:jung-graph-impl:2.1.1")
     implementation("net.sf.jung:jung-visualization:2.1.1")
     implementation("net.sf.jung:jung-algorithms:2.1.1")
-
-
-    testImplementation("org.jetbrains.kotlin:kotlin-test:1.8.20-RC")
 }
 
 tasks.test {

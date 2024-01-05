@@ -10,16 +10,17 @@ import javax.swing.JFrame
 import kotlin.math.round
 
 
-typealias GraphAlias = List<Pair<Int, Int>>
+typealias GraphAlias = List<Triple<Int, Int, Int>>
 
 
 fun generateGraph(size: Int): GraphAlias {
-    val list = mutableListOf<Pair<Int, Int>>()
+    val list = mutableListOf<Triple<Int, Int, Int>>()
     repeat(size) {
         list.add(
-            Pair(
+            Triple(
                 (1..size).random(),
-                (1..size).random()
+                (1..size).random(),
+                (1..2).random(),
             )
         )
     }
@@ -28,7 +29,7 @@ fun generateGraph(size: Int): GraphAlias {
 }
 
 fun main() {
-    val size = 60
+    val size = 10
     val isImmune = true
     val targetGraph = generateGraph(size)
     val start = Instant.now().epochSecond
@@ -39,7 +40,7 @@ fun main() {
     val generationAndFitness = mutableListOf<Pair<Int, Double>>()
     var currentFitness = 1
     var countGenerations = 0
-    while (round((currentFitness.toDouble() / targetFitness) * 100) < 98.0) {
+    while (round((currentFitness.toDouble() / targetFitness) * 100) < 80.0) {
         population = selection(population, eliteCount.toInt(), targetGraph)
         val children = mutableListOf<GraphAlias>()
         while (children.size < population.size) {
@@ -56,11 +57,15 @@ fun main() {
         currentFitness = population.fold(0) { acc, pairs -> acc + fitness(pairs, targetGraph) }
         println(currentFitness)
         if (countGenerations % 5 == 0) {
-            generationAndFitness.add(Pair(countGenerations, round((currentFitness.toDouble() / targetFitness) * 1000) / 10))
+            generationAndFitness.add(
+                Pair(
+                    countGenerations,
+                    round((currentFitness.toDouble() / targetFitness) * 1000) / 10
+                )
+            )
         }
         countGenerations++
     }
-    println()
     currentFitness = population.fold(0) { acc, pairs -> acc + fitness(pairs, targetGraph) }
     generationAndFitness.add(Pair(countGenerations, round((currentFitness.toDouble() / targetFitness) * 1000) / 10))
     println(generationAndFitness)
@@ -68,8 +73,8 @@ fun main() {
 
     println(Instant.now().epochSecond - start)
 
-//    displayGraph(targetGraph, "Target")
-//    displayGraph(population.maxBy { fitness(it, targetGraph) }, "Generated")
+    displayGraph(targetGraph, "Target")
+    displayGraph(population.maxBy { fitness(it, targetGraph) }, "Generated")
 }
 
 fun displayGraph(graph: GraphAlias, name: String) {
@@ -78,7 +83,7 @@ fun displayGraph(graph: GraphAlias, name: String) {
         if (!graphView.vertices.contains(it.first)) graphView.addVertex(it.first)
         if (!graphView.vertices.contains(it.second)) graphView.addVertex(it.second)
 
-        graphView.addEdge("${it.first} -> ${it.second}", it.first, it.second)
+        graphView.addEdge("${it.first}, ${it.second}, ${it.third}", it.first, it.second)
     }
 
     val vv = VisualizationViewer(CircleLayout(graphView))
@@ -109,36 +114,36 @@ fun selection(population: List<GraphAlias>, eliteCount: Int, targetGraph: GraphA
 }
 
 
-fun fitness(graph: GraphAlias, targetGraph: GraphAlias): Int {
-    val checked = mutableListOf<Pair<Int, Int>>()
-    val result = graph.fold(0) { acc, triple ->
+fun fitness(graph: GraphAlias, targetGraph: GraphAlias): Int = run {
+    val checked = mutableListOf<Triple<Int, Int, Int>>()
+    graph.fold(0) { acc, triple ->
         var counter = 0
         targetGraph.forEach {
-            if (it.first == triple.first && it.second == triple.second && !checked.contains(it)) {
+            if (
+                it.first == triple.first &&
+                it.second == triple.second &&
+                it.third == triple.third &&
+                !checked.contains(it)
+            ) {
                 checked.add(it)
                 counter++
             }
         }
         acc + counter
     }
-
-    return result
 }
 
-fun mutate(graph: GraphAlias): GraphAlias {
-    if (Random().nextDouble() < 0.1) {
+fun mutate(graph: GraphAlias): GraphAlias =
+    if (Random().nextDouble() < 0.3) {
         val replacement = graph.random()
         val child = graph.toMutableList()
         child[child.indexOf(replacement)] = generateGraph(1).first()
-
-        return child.toList()
-    }
-
-    return graph
-}
+        child.toList()
+    } else
+        graph
 
 fun crossover(parent1: GraphAlias, parent2: GraphAlias): GraphAlias {
-    val child = mutableListOf<Pair<Int, Int>>()
+    val child = mutableListOf<Triple<Int, Int, Int>>()
     val rand = Random()
     parent1.forEachIndexed { index, triple ->
         child.add(
@@ -152,6 +157,6 @@ fun crossover(parent1: GraphAlias, parent2: GraphAlias): GraphAlias {
     return child
 }
 
-fun generatePopulation(size: Int, personSize: Int): List<GraphAlias> = (0 until size).map {
-    generateGraph(personSize)
+fun generatePopulation(populationCount: Int, graphSize: Int): List<GraphAlias> = (0 until populationCount).map {
+    generateGraph(graphSize)
 }
